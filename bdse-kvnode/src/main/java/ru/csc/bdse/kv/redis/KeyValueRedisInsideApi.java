@@ -156,7 +156,7 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
     @Override
     public Set<NodeInfo> getInfo() {
         try {
-            return Collections.singleton(new NodeInfo("", getStatus()));
+            return Collections.singleton(new NodeInfo(nodeName, getStatus()));
         } catch (DockerException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
