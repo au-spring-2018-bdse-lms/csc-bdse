@@ -29,6 +29,10 @@ public class KeyValueRedisInsideApiTest {
 
     @Test
     public void genTest() throws DockerException, InterruptedException {
-        api.buildRedis();
+        try {
+            api.getStatus();
+        } catch (Exception e) {
+            api.buildRedis();
+        }
     }
 }

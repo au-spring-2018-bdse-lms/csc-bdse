@@ -19,8 +19,9 @@ import ru.csc.bdse.kv.NodeStatus;
 import ru.csc.bdse.util.Require;
 
 public class KeyValueRedisInsideApi implements KeyValueApi {
-    private final String containerName = "some-redis";
+//    private final String containerName = "some-redis";
     private final String buildContainerName = "someredisbuilded";
+    private final String containerName = buildContainerName;
     private final String imageName = "darkpeaceduck/bdse:redis_only";
     private final DockerClient docker;
     private NodeStatus status;
