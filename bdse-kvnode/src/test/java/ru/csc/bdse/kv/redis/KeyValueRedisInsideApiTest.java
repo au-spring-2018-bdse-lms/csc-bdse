@@ -35,4 +35,12 @@ public class KeyValueRedisInsideApiTest {
             api.buildRedis();
         }
     }
+
+    @Test
+    public void redisclient() throws DockerException, InterruptedException {
+        if (api.getStatus() == NodeStatus.DOWN) {
+            api.upRedis();
+        }
+        api.tryConnect();
+    }
 }

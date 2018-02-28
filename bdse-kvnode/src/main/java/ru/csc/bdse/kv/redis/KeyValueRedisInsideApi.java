@@ -3,6 +3,10 @@ package ru.csc.bdse.kv.redis;
 import java.util.*;
 
 import com.google.common.collect.ImmutableMap;
+import com.lambdaworks.redis.RedisClient;
+import com.lambdaworks.redis.RedisURI;
+import com.lambdaworks.redis.api.StatefulRedisConnection;
+import com.lambdaworks.redis.api.sync.RedisCommands;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
@@ -135,6 +139,20 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
             return NodeStatus.UP;
         } else
             return NodeStatus.DOWN;
+    }
+
+
+    public void tryConnect() throws DockerException, InterruptedException {
+        getStatus();
+        Require.nonNull(redisHostPort, "host redis port hasnt be resolved");
+        RedisClient client = RedisClient.create(RedisURI.create("localhost",Integer.parseInt(redisHostPort)));
+        StatefulRedisConnection<String, String> connection = client.connect();
+        RedisCommands<String, String> commands = connection.sync();
+        System.out.println(commands.get("a"));
+        commands.set("a", "b");
+        System.out.println(commands.get("a"));
+        connection.close();
+        client.shutdown();
     }
 
 }
