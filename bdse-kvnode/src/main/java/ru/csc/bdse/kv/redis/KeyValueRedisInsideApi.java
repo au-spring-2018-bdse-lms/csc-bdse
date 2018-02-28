@@ -17,7 +17,6 @@ import ru.csc.bdse.kv.NodeStatus;
 import ru.csc.bdse.util.Require;
 
 public class KeyValueRedisInsideApi implements KeyValueApi {
-//    private final String containerName = "some-redis";
     private final String buildContainerName = "someredisbuilded";
     private final String containerName = buildContainerName;
     private final String imageName = "darkpeaceduck/bdse:redis_only";
@@ -133,7 +132,6 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
         final ContainerInfo info = docker.inspectContainer(containerName);
         if (info.state().running()) {
             redisHostPort = info.networkSettings().ports().get(redisPortInsideContainer).get(0).hostPort();
-            System.out.println(redisHostPort);
             return NodeStatus.UP;
         } else
             return NodeStatus.DOWN;
