@@ -11,6 +11,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.ImageInfo;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import ru.csc.bdse.kv.KeyValueApi;
 import ru.csc.bdse.kv.NodeAction;
 import ru.csc.bdse.kv.NodeInfo;
@@ -19,6 +20,7 @@ import ru.csc.bdse.util.Require;
 
 public class KeyValueRedisInsideApi implements KeyValueApi {
     private final String containerName = "some-redis";
+    private final String buildContainerName = "someredisbuilded";
     private final String imageName = "darkpeaceduck/bdse:redis_only";
     private final DockerClient docker;
     private NodeStatus status;
@@ -87,8 +89,8 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
         docker.killContainer(containerName);
     }
 
-    public void buildRedis() {
-        if (continerConfig == null) {
+    public void buildRedis() throws DockerException, InterruptedException {
+        {
             ImageInfo info = null;
             final int retryesN = 2;
             for (int retryes = 0; retryes < retryesN; retryes++) {
@@ -107,6 +109,21 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
             }
             Require.nonNull(info, "unable to inspect image to build container");
         }
+
+        if (continerConfig == null) {
+            continerConfig = ContainerConfig.builder()
+                    .image(imageName)
+                    .attachStderr(Boolean.FALSE)
+                    .attachStdin(Boolean.FALSE)
+                    .attachStdout(Boolean.FALSE)
+                    .tty(Boolean.FALSE)
+                    .cmd("redis-server", "--appendonly", "yes")
+                    .build();
+
+            Require.nonNull(continerConfig, "unable to builder creation container config");
+        }
+
+        docker.createContainer(continerConfig, buildContainerName);
     }
 
     public NodeStatus getStatus() throws DockerException, InterruptedException {

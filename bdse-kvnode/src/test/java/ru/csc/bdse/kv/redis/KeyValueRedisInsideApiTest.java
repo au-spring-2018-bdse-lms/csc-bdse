@@ -1,5 +1,6 @@
 package ru.csc.bdse.kv.redis;
 
+import com.spotify.docker.client.exceptions.DockerException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -27,7 +28,7 @@ public class KeyValueRedisInsideApiTest {
     }
 
     @Test
-    public void genTest() {
+    public void genTest() throws DockerException, InterruptedException {
         api.buildRedis();
     }
 }
