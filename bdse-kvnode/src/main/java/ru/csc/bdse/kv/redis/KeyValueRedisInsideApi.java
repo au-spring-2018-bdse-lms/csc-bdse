@@ -1,17 +1,15 @@
 package ru.csc.bdse.kv.redis;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
+import com.google.common.collect.ImmutableMap;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.*;
 import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.apache.catalina.Host;
 import ru.csc.bdse.kv.KeyValueApi;
 import ru.csc.bdse.kv.NodeAction;
 import ru.csc.bdse.kv.NodeInfo;
@@ -24,14 +22,13 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
     private final String containerName = buildContainerName;
     private final String imageName = "darkpeaceduck/bdse:redis_only";
     private final DockerClient docker;
+    private final String redisPortInsideContainer = "6379/tcp";
+    private String redisHostPort = null;
     private NodeStatus status;
 
     private ContainerConfig continerConfig = null;
 
     public KeyValueRedisInsideApi() throws DockerCertificateException {
-//        docker = DefaultDockerClient.builder()
-//                .build();
-//        docker = DefaultDockerClient.fromEnv().build();
         docker = new DefaultDockerClient("unix:///var/run/docker.sock");
     }
 
@@ -112,7 +109,12 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
         }
 
         if (continerConfig == null) {
+            final Map<String, List<PortBinding>> portBindings =
+                    ImmutableMap.of( redisPortInsideContainer,
+                            Arrays.asList(PortBinding.randomPort("0.0.0.0") ) );
+            final HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
             continerConfig = ContainerConfig.builder()
+                    .hostConfig(hostConfig)
                     .image(imageName)
                     .attachStderr(Boolean.FALSE)
                     .attachStdin(Boolean.FALSE)
@@ -130,6 +132,8 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
     public NodeStatus getStatus() throws DockerException, InterruptedException {
         final ContainerInfo info = docker.inspectContainer(containerName);
         if (info.state().running()) {
+            redisHostPort = info.networkSettings().ports().get(redisPortInsideContainer).get(0).hostPort();
+            System.out.println(redisHostPort);
             return NodeStatus.UP;
         } else
             return NodeStatus.DOWN;
