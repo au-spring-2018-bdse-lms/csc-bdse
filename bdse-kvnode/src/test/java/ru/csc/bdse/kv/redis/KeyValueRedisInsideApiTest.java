@@ -25,4 +25,9 @@ public class KeyValueRedisInsideApiTest {
         api.stopRedis();
         assertEquals(api.getStatus() , NodeStatus.DOWN);
     }
+
+    @Test
+    public void genTest() {
+        api.buildRedis();
+    }
 }

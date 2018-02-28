@@ -8,7 +8,9 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.ImageInfo;
 import ru.csc.bdse.kv.KeyValueApi;
 import ru.csc.bdse.kv.NodeAction;
 import ru.csc.bdse.kv.NodeInfo;
@@ -17,8 +19,11 @@ import ru.csc.bdse.util.Require;
 
 public class KeyValueRedisInsideApi implements KeyValueApi {
     private final String containerName = "some-redis";
+    private final String imageName = "darkpeaceduck/bdse:redis_only";
     private final DockerClient docker;
     private NodeStatus status;
+
+    private ContainerConfig continerConfig = null;
 
     public KeyValueRedisInsideApi() throws DockerCertificateException {
 //        docker = DefaultDockerClient.builder()
@@ -80,6 +85,28 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
 
     public void stopRedis() throws DockerException, InterruptedException {
         docker.killContainer(containerName);
+    }
+
+    public void buildRedis() {
+        if (continerConfig == null) {
+            ImageInfo info = null;
+            final int retryesN = 2;
+            for (int retryes = 0; retryes < retryesN; retryes++) {
+                try {
+                    info = docker.inspectImage(imageName);
+                } catch (DockerException | InterruptedException e) {
+                    e.printStackTrace();
+                    if (retryes < retryesN - 1) {
+                        try {
+                            docker.pull(imageName);
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                }
+            }
+            Require.nonNull(info, "unable to inspect image to build container");
+        }
     }
 
     public NodeStatus getStatus() throws DockerException, InterruptedException {
