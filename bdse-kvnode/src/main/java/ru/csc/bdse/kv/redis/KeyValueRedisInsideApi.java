@@ -1,59 +1,156 @@
 package ru.csc.bdse.kv.redis;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.lambdaworks.redis.RedisClient;
 import com.lambdaworks.redis.RedisURI;
 import com.lambdaworks.redis.api.StatefulRedisConnection;
 import com.lambdaworks.redis.api.sync.RedisCommands;
+import com.lambdaworks.redis.codec.RedisCodec;
+import com.lambdaworks.redis.codec.StringCodec;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import org.apache.catalina.Host;
 import ru.csc.bdse.kv.KeyValueApi;
 import ru.csc.bdse.kv.NodeAction;
 import ru.csc.bdse.kv.NodeInfo;
 import ru.csc.bdse.kv.NodeStatus;
 import ru.csc.bdse.util.Require;
+import com.lambdaworks.redis.codec.ByteArrayCodec;
 
 public class KeyValueRedisInsideApi implements KeyValueApi {
     private final String buildContainerName = "someredisbuilded";
     private final String containerName = buildContainerName;
     private final String imageName = "darkpeaceduck/bdse:redis_only";
-    private final DockerClient docker;
     private final String redisPortInsideContainer = "6379/tcp";
-    private String redisHostPort = null;
-    private NodeStatus status;
+
+
+    private class RunningState {
+        public class Codec implements RedisCodec<String, byte[]> {
+            ByteArrayCodec valCodec;
+            StringCodec keyCodec;
+
+            public Codec() {
+                this.valCodec = new ByteArrayCodec();
+                this.keyCodec = new StringCodec();
+            }
+
+            @Override
+            public String decodeKey(ByteBuffer byteBuffer) {
+                return keyCodec.decodeKey(byteBuffer);
+            }
+
+            @Override
+            public byte[] decodeValue(ByteBuffer byteBuffer) {
+                return valCodec.decodeValue(byteBuffer);
+            }
+
+            @Override
+            public ByteBuffer encodeKey(String s) {
+                return keyCodec.encodeKey(s);
+            }
+
+            @Override
+            public ByteBuffer encodeValue(byte[] bytes) {
+                return valCodec.encodeValue(bytes);
+            }
+        }
+        String redisHostPort = null;
+        RedisClient client = null;
+        StatefulRedisConnection<String, byte[]> connection = null;
+        RedisCommands<String, byte[]> commands = null;
+
+        void updateOnStarted(final ContainerInfo info) {
+            redisHostPort = info.networkSettings().ports().get(redisPortInsideContainer).get(0).hostPort();
+            client = RedisClient.create(RedisURI.create("localhost",
+                    Integer.parseInt(redisHostPort)));
+            connection = client.connect(new Codec());
+            commands = connection.sync();
+        }
+
+        void updateOnStopped() {
+            if (connection != null)
+                connection.close();
+            if (client != null)
+                client.shutdown();
+
+            redisHostPort = null;
+            client = null;
+            connection = null;
+            commands = null;
+        }
+        RedisCommands<String, byte[]> getCommands() {
+            if (commands == null)
+                throw new IllegalArgumentException();
+            return commands;
+        }
+    }
+
+    private RunningState rstate;
+    private final String nodeName;
+    private final DockerClient docker;
 
     private ContainerConfig continerConfig = null;
 
-    public KeyValueRedisInsideApi() throws DockerCertificateException {
-        docker = new DefaultDockerClient("unix:///var/run/docker.sock");
+    public KeyValueRedisInsideApi(String nodeName) throws DockerCertificateException {
+        this.nodeName = nodeName;
+        this.docker = new DefaultDockerClient("unix:///var/run/docker.sock");
+        this.rstate = new RunningState();
+
+        action(nodeName, NodeAction.UP);
     }
 
 
     @Override
     public void put(String key, byte[] value) {
+        try {
+            getStatus();
+            rstate.getCommands().set(key, value);
+        } catch (Exception e) {
+
+        }
+
 
     }
 
     @Override
     public Optional<byte[]> get(String key) {
-        return Optional.empty();
+        try {
+            getStatus();
+            byte[] val = rstate.getCommands().get(key);
+            if (val == null)
+                return Optional.empty();
+            else
+                return Optional.of(val);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public Set<String> getKeys(String prefix) {
-        return null;
+        try {
+            getStatus();
+            return ImmutableSet.copyOf(rstate.getCommands().keys(prefix));
+        } catch (Exception e) {
+            return ImmutableSet.of();
+        }
     }
 
     @Override
     public void delete(String key) {
+        try {
+            getStatus();
+            rstate.getCommands().del(key);
+        } catch (Exception e) {
 
+        }
     }
 
     @Override
@@ -71,14 +168,19 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
     @Override
     public void action(String node, NodeAction action) {
         Require.nonNull(action, "action is null");
-        if (action == NodeAction.UP) {
-            try {
+
+        try {
+            final NodeStatus status = getStatus();
+            if (action == NodeAction.UP && status == NodeStatus.DOWN) {
                 upRedis();
-            } catch (DockerException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                getStatus();
             }
+            if (action == NodeAction.DOWN && status == NodeStatus.UP) {
+                stopRedis();
+                getStatus();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -133,26 +235,20 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
     }
 
     public NodeStatus getStatus() throws DockerException, InterruptedException {
-        final ContainerInfo info = docker.inspectContainer(containerName);
+        ContainerInfo info = null;
+        try {
+            info = docker.inspectContainer(containerName);
+        } catch (ContainerNotFoundException e) {
+            buildRedis();
+            info = docker.inspectContainer(containerName);
+        }
+        Require.nonNull(info, "container info is empty");
         if (info.state().running()) {
-            redisHostPort = info.networkSettings().ports().get(redisPortInsideContainer).get(0).hostPort();
+            rstate.updateOnStarted(info);
             return NodeStatus.UP;
-        } else
+        } else {
+            rstate.updateOnStopped();
             return NodeStatus.DOWN;
+        }
     }
-
-
-    public void tryConnect() throws DockerException, InterruptedException {
-        getStatus();
-        Require.nonNull(redisHostPort, "host redis port hasnt be resolved");
-        RedisClient client = RedisClient.create(RedisURI.create("localhost",Integer.parseInt(redisHostPort)));
-        StatefulRedisConnection<String, String> connection = client.connect();
-        RedisCommands<String, String> commands = connection.sync();
-        System.out.println(commands.get("a"));
-        commands.set("a", "b");
-        System.out.println(commands.get("a"));
-        connection.close();
-        client.shutdown();
-    }
-
 }
