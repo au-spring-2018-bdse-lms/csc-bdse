@@ -1,6 +1,7 @@
 package ru.csc.bdse.kv;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -16,6 +17,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  *
  * @author alesavin
  */
+@Ignore
 public class KeyValueApiHttpClientTest2 {
 
     @ClassRule

@@ -50,6 +50,7 @@ public class KeyValueRedisInsideApiTest {
 //        api.tryConnect();
     }
 
+    @Ignore
     @Test
     public void testSimple() {
         api.action("test node", NodeAction.UP);
