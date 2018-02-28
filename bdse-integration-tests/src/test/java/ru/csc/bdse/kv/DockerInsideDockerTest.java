@@ -1,5 +1,6 @@
 package ru.csc.bdse.kv;
 
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
@@ -24,5 +25,8 @@ public class DockerInsideDockerTest {
 
     @Test
     public void empty() {
+        final String baseUrl = "http://localhost:" + node.getMappedPort(8080);
+        KeyValueApi api = new KeyValueApiHttpClient(baseUrl);
+        Assert.assertEquals(NodeStatus.UP, api.getInfo().iterator().next().getStatus());
     }
 }
