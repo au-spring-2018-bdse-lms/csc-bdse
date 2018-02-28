@@ -26,6 +26,13 @@ public class Application {
     KeyValueApi node() throws DockerCertificateException {
         String nodeName = Env.get(Env.KVNODE_NAME).orElseGet(Application::randomNodeName);
 //        return new InMemoryKeyValueApi(nodeName);
-        return new KeyValueRedisInsideApi(nodeName);
+        KeyValueApi ret = null;
+
+        try {
+            ret = new KeyValueRedisInsideApi(nodeName);
+        } catch (Exception e) {
+            System.exit(1);
+        }
+        return ret;
     }
 }

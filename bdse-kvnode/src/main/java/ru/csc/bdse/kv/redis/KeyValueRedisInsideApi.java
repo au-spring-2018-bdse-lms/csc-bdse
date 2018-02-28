@@ -98,11 +98,12 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
 
     private ContainerConfig continerConfig = null;
 
-    public KeyValueRedisInsideApi(String nodeName) throws DockerCertificateException {
+    public KeyValueRedisInsideApi(String nodeName) throws DockerCertificateException, DockerException, InterruptedException {
         this.nodeName = nodeName;
         this.docker = new DefaultDockerClient("unix:///var/run/docker.sock");
         this.rstate = new RunningState();
 
+        getStatus();
         action(nodeName, NodeAction.UP);
     }
 
@@ -162,7 +163,7 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return null;
+        return Collections.singleton(new NodeInfo("FAILED", NodeStatus.DOWN));
     }
 
     @Override

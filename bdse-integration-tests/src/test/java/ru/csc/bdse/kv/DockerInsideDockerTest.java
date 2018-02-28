@@ -3,6 +3,7 @@ package ru.csc.bdse.kv;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import ru.csc.bdse.util.Env;
@@ -21,6 +22,8 @@ public class DockerInsideDockerTest {
                     .withFileFromClasspath("Dockerfile", "kvnode/Dockerfile"))
             .withEnv(Env.KVNODE_NAME, "node-0")
             .withExposedPorts(8080)
+            .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock",
+                    BindMode.READ_WRITE)
             .withStartupTimeout(Duration.of(30, SECONDS));
 
     @Test
