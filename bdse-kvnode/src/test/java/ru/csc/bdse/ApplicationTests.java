@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 public class ApplicationTests {
 
 	@Test
-	public void contextLoads() {
+	public void contextLoads() throws InterruptedException {
 	}
+
 }

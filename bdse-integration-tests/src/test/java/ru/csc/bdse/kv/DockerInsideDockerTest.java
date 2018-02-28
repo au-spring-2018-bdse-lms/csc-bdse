@@ -21,14 +21,18 @@ public class DockerInsideDockerTest {
                             ("../bdse-kvnode/target/bdse-kvnode-0.0.1-SNAPSHOT.jar"))
                     .withFileFromClasspath("Dockerfile", "kvnode/Dockerfile"))
             .withEnv(Env.KVNODE_NAME, "node-0")
-            .withExposedPorts(8080)
+//            .withExposedPorts(8080)
             .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock",
                     BindMode.READ_WRITE)
+            .withNetworkMode("host")
+//            .withFileSystemBind("/var/lib/docker", "var/lib/docker",
+//                       BindMode.READ_WRITE)
             .withStartupTimeout(Duration.of(30, SECONDS));
 
     @Test
-    public void empty() {
-        final String baseUrl = "http://localhost:" + node.getMappedPort(8080);
+    public void empty() throws InterruptedException {
+//        final String baseUrl = "http://localhost:" + node.getMappedPort(8080);
+        final String baseUrl = "http://localhost:8080";
         KeyValueApi api = new KeyValueApiHttpClient(baseUrl);
         Assert.assertEquals(NodeStatus.UP, api.getInfo().iterator().next().getStatus());
     }

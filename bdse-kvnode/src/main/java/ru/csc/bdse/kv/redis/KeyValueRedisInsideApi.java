@@ -163,7 +163,7 @@ public class KeyValueRedisInsideApi implements KeyValueApi {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return Collections.singleton(new NodeInfo("FAILED", NodeStatus.DOWN));
+        return null;
     }
 
     @Override

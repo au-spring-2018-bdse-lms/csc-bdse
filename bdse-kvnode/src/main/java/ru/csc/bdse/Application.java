@@ -31,6 +31,7 @@ public class Application {
         try {
             ret = new KeyValueRedisInsideApi(nodeName);
         } catch (Exception e) {
+            e.printStackTrace();
             System.exit(1);
         }
         return ret;
