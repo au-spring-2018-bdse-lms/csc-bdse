@@ -19,7 +19,7 @@ public class KeyValueRedisInsideApiTest {
 
     @Before
     public void setUp() throws Exception {
-        api = new KeyValueRedisInsideApi("");
+        api = new KeyValueRedisInsideApi("test node");
     }
     @Test
     @Ignore
@@ -52,15 +52,19 @@ public class KeyValueRedisInsideApiTest {
 
     @Test
     public void testSimple() {
-        api.action("", NodeAction.UP);
+        api.action("test node", NodeAction.UP);
         String key = "a";
         byte[] value = "b".getBytes();
         api.put(key, value);
-        api.action("", NodeAction.DOWN);
+        Assert.assertEquals(api.getInfo().iterator().next().getName(), "test node");
+        Assert.assertEquals(api.getInfo().iterator().next().getStatus(), NodeStatus.UP);
+        api.action("test node", NodeAction.DOWN);
+        Assert.assertEquals(api.getInfo().iterator().next().getStatus(), NodeStatus.DOWN);
         try {
             Assert.assertArrayEquals(value, api.get(key).get());
         } catch (NoSuchElementException e) {
             api.action("", NodeAction.UP);
+            Assert.assertEquals(api.getInfo().iterator().next().getStatus(), NodeStatus.UP);
             Assert.assertArrayEquals(value, api.get(key).get());
         }
     }
