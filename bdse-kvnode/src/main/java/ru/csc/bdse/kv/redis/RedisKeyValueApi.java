@@ -46,6 +46,7 @@ public class RedisKeyValueApi implements KeyValueApi {
         Require.nonEmpty(name, "empty name");
         this.name = name;
         this.redisUri = redisUri;
+        action(name, NodeAction.UP);
     }
 
     private RedisCommands<String, byte[]> getCommands() {
