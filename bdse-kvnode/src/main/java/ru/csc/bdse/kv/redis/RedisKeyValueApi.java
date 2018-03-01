@@ -2,6 +2,7 @@ package ru.csc.bdse.kv.redis;
 
 import com.lambdaworks.redis.RedisClient;
 import com.lambdaworks.redis.RedisException;
+import com.lambdaworks.redis.ScanArgs;
 import com.lambdaworks.redis.api.StatefulRedisConnection;
 import com.lambdaworks.redis.api.sync.RedisCommands;
 import ru.csc.bdse.kv.*;
@@ -82,10 +83,14 @@ public class RedisKeyValueApi implements KeyValueApi {
     public Set<String> getKeys(String prefix) {
         Require.nonNull(prefix, "null prefix");
         try {
-            return new HashSet<>(getCommands().keys(prefix));
+            return new HashSet<>(getCommands().scan(ScanArgs.Builder.matches(escapeForGlob(prefix) + "*")).getKeys());
         } catch (RedisException e) {
             throw new NodeOperationException("Unable to SET value in Redis", e);
         }
+    }
+
+    private String escapeForGlob(String string) {
+        return string.replaceAll("[\\[\\]*?]", "\\1");
     }
 
     @Override
