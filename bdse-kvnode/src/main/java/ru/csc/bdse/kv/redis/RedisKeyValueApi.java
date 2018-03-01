@@ -40,7 +40,7 @@ public class RedisKeyValueApi implements KeyValueApi {
         }
     }
 
-    private AtomicReference<RedisConnection> connectionReference;
+    final private AtomicReference<RedisConnection> connectionReference = new AtomicReference<>();
 
     public RedisKeyValueApi(final String name, final String redisUri) {
         Require.nonEmpty(name, "empty name");
