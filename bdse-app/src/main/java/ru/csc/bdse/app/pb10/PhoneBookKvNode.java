@@ -5,7 +5,7 @@ import ru.csc.bdse.app.pb10.proto.PhoneBook;
 import ru.csc.bdse.kv.KeyValueApi;
 
 public class PhoneBookKvNode extends PhoneBookKvNodeBase {
-    PhoneBookKvNode(KeyValueApi keyValueApi) {
+    public PhoneBookKvNode(KeyValueApi keyValueApi) {
         super(keyValueApi, PhoneBook.RecordMessage.parser());
     }
 }
