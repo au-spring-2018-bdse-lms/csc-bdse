@@ -16,7 +16,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  *
  * @author alesavin
  */
-public class KeyValueApiHttpClientTest2 {
+public class KeyValueApiHttpClientNonFunctionalTest {
 
     @ClassRule
     public static final GenericContainer node = new GenericContainer(
