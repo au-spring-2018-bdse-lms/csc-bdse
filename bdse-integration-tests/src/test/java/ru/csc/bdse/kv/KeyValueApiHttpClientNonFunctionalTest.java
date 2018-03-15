@@ -25,6 +25,7 @@ public class KeyValueApiHttpClientNonFunctionalTest {
                             ("../bdse-kvnode/target/bdse-kvnode-0.0.1-SNAPSHOT.jar"))
                     .withFileFromClasspath("Dockerfile", "kvnode/Dockerfile"))
             .withEnv(Env.KVNODE_NAME, "node-0")
+            .withEnv(Env.KVNODE_INMEMORY, "true")
             .withExposedPorts(8080)
             .withStartupTimeout(Duration.of(30, SECONDS));
 
