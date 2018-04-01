@@ -25,6 +25,7 @@ public class KeyValueApiHttpClientTest2 {
                             ("../bdse-kvnode/target/bdse-kvnode-0.0.1-SNAPSHOT.jar"))
                     .withFileFromClasspath("Dockerfile", "kvnode/Dockerfile"))
             .withEnv(Env.KVNODE_NAME, "node-0")
+            .withEnv(Env.KVNODE_INMEMORY, "memory")
             .withExposedPorts(8080)
             .withStartupTimeout(Duration.of(30, SECONDS));
 
@@ -37,12 +38,12 @@ public class KeyValueApiHttpClientTest2 {
 
     @Test
     public void concurrentPuts() {
-        // TODO simultanious puts for the same key value
+        // TODO simultaneous puts for the same key value
     }
 
     @Test
     public void concurrentDeleteAndKeys() {
-        //TODO simultanious delete by key and keys listing
+        //TODO simultaneous delete by key and keys listing
     }
 
     @Test
