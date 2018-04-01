@@ -24,11 +24,11 @@ public class Application {
     @Bean
     KeyValueApi node() {
         String nodeName = Env.get(Env.KVNODE_NAME).orElseGet(Application::randomNodeName);
-        if (Env.get(Env.KVNODE_INMEMORY).orElse("") != "") {
+        if (!Env.get(Env.KVNODE_INMEMORY).orElse("").equals("")) {
             return new InMemoryKeyValueApi(nodeName);
         }
         String redisUri = Env.get(Env.KVNODE_REDIS_URI).orElse("");
-        if (redisUri != "") {
+        if (!redisUri.equals("")) {
             return new RedisKeyValueApi(nodeName, redisUri);
         }
         throw new IllegalArgumentException("Neither KVNODE_INMEMORY nor KVNODE_REDIS_URI envvar is specified");
