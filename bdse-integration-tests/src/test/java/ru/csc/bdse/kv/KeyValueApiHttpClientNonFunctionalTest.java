@@ -4,12 +4,22 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import ru.csc.bdse.util.Constants;
 import ru.csc.bdse.util.Env;
+import ru.csc.bdse.util.Random;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static junit.framework.TestCase.assertSame;
+import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Test have to be implemented
@@ -37,13 +47,65 @@ public class KeyValueApiHttpClientNonFunctionalTest {
     }
 
     @Test
-    public void concurrentPuts() {
-        // TODO simultanious puts for the same key value
+    public void concurrentPuts() throws InterruptedException {
+        String key = Random.nextKey();
+        byte[] value = Random.nextValue();
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 100; i++) {
+            executor.submit(() -> {
+                api.put(key, value);
+                byte[] newValue = api.get(key).orElse(Constants.EMPTY_BYTE_ARRAY);
+                assertArrayEquals(value, newValue);
+            });
+        }
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        byte[] newValue = api.get(key).orElse(Constants.EMPTY_BYTE_ARRAY);
+        assertArrayEquals(value, newValue);
     }
 
     @Test
-    public void concurrentDeleteAndKeys() {
-        //TODO simultanious delete by key and keys listing
+    public void concurrentDeleteAndKeys() throws InterruptedException {
+        Map<String, byte[]> data = new HashMap<>();
+        List<String> keys = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            String key = Random.nextKey();
+            byte[] value = Random.nextValue();
+            keys.add(key);
+            data.put(key, value);
+            api.put(key, value);
+            api.put(key + "a", value);
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 100; i++) {
+            int finalI = i;
+            executor.submit(() -> {
+                String key = keys.get(finalI);
+                byte[] value = data.get(key);
+                byte[] newValue = api.get(key).orElse(Constants.EMPTY_BYTE_ARRAY);
+
+                assertArrayEquals(value, newValue);
+                Set<String> keysWithPrefix = api.getKeys(key);
+                assertTrue(keysWithPrefix.contains(key));
+                assertTrue(keysWithPrefix.contains(key + "a"));
+
+                api.delete(key);
+                api.delete(key + "a");
+
+                Set<String> keysWithPrefixNew = api.getKeys(key);
+                assertFalse(keysWithPrefixNew.contains(key));
+                assertFalse(keysWithPrefixNew.contains(key + "a"));
+            });
+        }
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        Set<String> currentKeys = api.getKeys("");
+        for (int i = 0; i < 100; i++) {
+            String key = keys.get(i);
+            assertFalse(currentKeys.contains(key));
+            assertFalse(currentKeys.contains(key + "a"));
+        }
     }
 
     @Test
@@ -72,7 +134,7 @@ public class KeyValueApiHttpClientNonFunctionalTest {
     }
 
     @Test
-    public void loadMillionKeys()  {
+    public void loadMillionKeys() {
         //TODO load too many data (optional)
     }
 }
