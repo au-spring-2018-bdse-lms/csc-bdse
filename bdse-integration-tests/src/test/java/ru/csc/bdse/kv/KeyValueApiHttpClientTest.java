@@ -1,5 +1,6 @@
 package ru.csc.bdse.kv;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -39,6 +40,12 @@ public class KeyValueApiHttpClientTest extends AbstractKeyValueApiTest {
                 .withNetwork(network)
                 .withStartupTimeout(Duration.of(30, SECONDS));
         node.start();
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        node.stop();
+        redisNode.stop();
     }
 
     @Override
