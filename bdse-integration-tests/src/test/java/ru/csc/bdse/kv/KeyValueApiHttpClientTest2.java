@@ -1,5 +1,6 @@
 package ru.csc.bdse.kv;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
@@ -49,6 +50,12 @@ public class KeyValueApiHttpClientTest2 {
                 .withNetwork(network)
                 .withStartupTimeout(Duration.of(30, SECONDS));
         node.start();
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        node.stop();
+        redisNode.stop();
     }
 
     private KeyValueApi api = newKeyValueApi();
