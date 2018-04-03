@@ -83,7 +83,7 @@ public class RedisKeyValueApi implements KeyValueApi {
     public Set<String> getKeys(String prefix) {
         Require.nonNull(prefix, "null prefix");
         try {
-            return new HashSet<>(getCommands().scan(ScanArgs.Builder.matches(escapeForGlob(prefix) + "*")).getKeys());
+            return new HashSet<>(getCommands().keys(escapeForGlob(prefix) + "*"));
         } catch (RedisException e) {
             throw new NodeOperationException("Unable to SET value in Redis", e);
         }
