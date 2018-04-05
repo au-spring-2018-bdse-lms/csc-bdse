@@ -19,7 +19,7 @@ public abstract class AbstractKeyValueApiTest {
 
     protected abstract KeyValueApi newKeyValueApi();
 
-    private KeyValueApi api = newKeyValueApi();
+    protected KeyValueApi api = newKeyValueApi();
 
     @Test
     public void createValue() {
