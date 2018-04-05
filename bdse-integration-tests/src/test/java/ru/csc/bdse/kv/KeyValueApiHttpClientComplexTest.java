@@ -146,17 +146,56 @@ public class KeyValueApiHttpClientComplexTest {
 
     @Test
     public void putWithStoppedNode() {
-        //TODO test put if node/container was stopped
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.DOWN);
+        }
+        String key = Random.nextKey();
+        byte[] value = Random.nextValue();
+        boolean thrown = false;
+        try {
+            api.put(key, value);
+        } catch (Exception e) {
+            thrown = true;
+        }
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.UP);
+        }
+        assertTrue(thrown);
     }
 
     @Test
     public void getWithStoppedNode() {
-        //TODO test get if node/container was stopped
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.DOWN);
+        }
+        String key = Random.nextKey();
+        boolean thrown = false;
+        try {
+            api.get(key);
+        } catch (Exception e) {
+            thrown = true;
+        }
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.UP);
+        }
+        assertTrue(thrown);
     }
 
     @Test
     public void getKeysByPrefixWithStoppedNode() {
-        //TODO test getKeysByPrefix if node/container was stopped
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.DOWN);
+        }
+        boolean thrown = false;
+        try {
+            api.getKeys("");
+        } catch (Exception e) {
+            thrown = true;
+        }
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.UP);
+        }
+        assertTrue(thrown);
     }
 
     @Test
