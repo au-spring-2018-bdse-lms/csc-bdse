@@ -28,10 +28,11 @@ public class Application {
 
     @Bean(name="external")
     KeyValueApi external(@Qualifier("inner") KeyValueApi innerNode) {
-        String[] replicasUrl = Env.get(Env.KVNODE_REPLICAS_URL).orElse("").split(",");
-        if (replicasUrl.length == 0) {
+        String replicasUrlString = Env.get(Env.KVNODE_REPLICAS_URL).orElse("");
+        if (replicasUrlString.isEmpty()) {
             return innerNode;
         }
+        String[] replicasUrl = replicasUrlString.split(",");
         int replicaTimeoutMs = Integer.parseInt(Env.get(Env.KVNODE_REPLICA_TIMEOUT_MS).orElse("1000"));
         int wcl = Integer.parseInt(Env.get(Env.KVNODE_WCL).orElse(Integer.toString(replicasUrl.length)));
         int rcl = Integer.parseInt(Env.get(Env.KVNODE_RCL).orElse(Integer.toString(replicasUrl.length)));
@@ -41,6 +42,7 @@ public class Application {
         for (String peerUrl : replicasUrl) {
             peers.add(new KeyValueApiHttpClient(peerUrl));
         }
+
         return new Coordinator(new ClusterConfiguration(peers, replicaTimeoutMs, wcl, rcl), new LastTimestampConflictResolver());
     }
 
