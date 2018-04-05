@@ -25,7 +25,7 @@ import static org.junit.Assert.assertFalse;
  *
  * @author alesavin
  */
-public class KeyValueApiHttpClientTest2 {
+public class KeyValueApiHttpClientComplexTest {
     private static final int REDIS_PORT = 6379;
     private static final Network network = Network.newNetwork();
     private static GenericContainer redisNode;
