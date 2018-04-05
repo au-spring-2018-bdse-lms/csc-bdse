@@ -129,7 +129,19 @@ public class KeyValueApiHttpClientNonFunctionalTest {
 
     @Test
     public void actionUpDown() {
-        //TODO test up/down actions
+        String key = Random.nextKey();
+        byte[] value = Random.nextValue();
+        api.put(key, value);
+
+        for (NodeInfo info : api.getInfo()) {
+            api.action(info.getName(), NodeAction.DOWN);
+            api.action(info.getName(), NodeAction.UP);
+        }
+
+        Optional<byte[]> receivedValue;
+        receivedValue = api.get(key);
+        assertTrue(receivedValue.isPresent());
+        assertArrayEquals(value, receivedValue.get());
     }
 
     @Test
