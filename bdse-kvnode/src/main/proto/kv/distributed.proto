@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package kv.distributed;
+
+option java_package = "ru.csc.bdse.kv.distributed";
+
+message VersionedRecord {
+    bytes payload = 1;
+    bool isDeleted = 2;
+    int64 timestamp = 3;
+}
