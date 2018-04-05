@@ -1,6 +1,5 @@
 package ru.csc.bdse.kv;
 
-import org.assertj.core.api.SoftAssertions;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -8,19 +7,23 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import ru.csc.bdse.util.Env;
+import ru.csc.bdse.util.Random;
 
 import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.junit.Assert.assertArrayEquals;
 
 public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
     private static final int REDIS_PORT = 6379;
     private static final Network network = Network.newNetwork();
     private static GenericContainer[] redisNodes, nodes;
+    private static KeyValueApi[] innerNodes;
 
     private static final int REPLICAS = 3;
     private static final int WCL = 2;
@@ -35,8 +38,11 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
                     .withNetwork(network)
                     .withNetworkAliases("redis-node" + i)
                     .withStartupTimeout(Duration.of(30, SECONDS));
+            redisNodes[i].start();
         }
+
         nodes = new GenericContainer[REPLICAS];
+        innerNodes = new KeyValueApi[REPLICAS];
         for (int i = 0; i < REPLICAS; i++) {
             List<String> peers = new ArrayList<>();
             for (int j = 0; j < REPLICAS; j++)
@@ -44,12 +50,8 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
                     peers.add("http://node" + j + ":8080/inner");
                 }
             nodes[i] = createNode("node" + i, String.join(",", peers));
-        }
-        for (GenericContainer node : redisNodes) {
-            node.start();
-        }
-        for (GenericContainer node : nodes) {
-            node.start();
+            nodes[i].start();
+            innerNodes[i] = new KeyValueApiHttpClient("http://localhost" + ":" + nodes[i].getMappedPort(8080) + "/inner");
         }
     }
 
@@ -91,13 +93,51 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
 
     @Override
     protected KeyValueApi newKeyValueApi() {
-        final String baseUrl = "http://localhost:" + nodes[0].getMappedPort(8080);
-        return new KeyValueApiHttpClient(baseUrl);
+        return new FailoverKeyValueApi(
+                Arrays.stream(nodes).map(
+                        node -> new KeyValueApiHttpClient("http://localhost:" + node.getMappedPort(8080))
+                ).collect(Collectors.toList()));
     }
 
 
     @Override
     protected int numberOfNodes() {
         return REPLICAS;
+    }
+
+    @Test
+    public void writeKillRead() {
+        String key = Random.nextKey();
+        byte[] value = Random.nextValue();
+
+        api.put(key, value);
+
+        for (int i = 0; i < REPLICAS; i++) {
+            System.out.println("Pausing node " + i);
+            innerNodes[i].action("node" + i, NodeAction.DOWN);
+            try {
+                assertArrayEquals(value, api.get(key).get());
+            } finally {
+                innerNodes[i].action("node" + i, NodeAction.UP);
+            }
+        }
+    }
+
+    @Test
+    public void writeKillOverwriteRestoreRead() {
+        String key = Random.nextKey();
+
+        api.put(key, Random.nextValue());
+        for (int i = 0; i < REPLICAS; i++) {
+            byte[] newValue = Random.nextValue();
+            System.out.println("Pausing node " + i);
+            innerNodes[i].action("node" + i, NodeAction.DOWN);
+            try {
+                api.put(key, newValue);
+            } finally {
+                innerNodes[i].action("node" + i, NodeAction.UP);
+            }
+            assertArrayEquals(newValue, api.get(key).get());
+        }
     }
 }
