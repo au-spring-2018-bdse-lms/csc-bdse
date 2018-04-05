@@ -3,8 +3,9 @@ language: java
 services:
 - docker
 before_install:
-- sudo apt-get -qq update
-- sudo apt-get install -y protobuf-compiler
+- ./install_protoc.sh
+- export PATH=$PATH:$PWD/protoc/bin
+- protoc --version
 install:
 - ./mvnw --projects bdse-kvnode clean package
 - docker pull redis:3.2.11
