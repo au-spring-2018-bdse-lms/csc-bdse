@@ -19,6 +19,10 @@ public abstract class AbstractKeyValueApiTest {
 
     protected abstract KeyValueApi newKeyValueApi();
 
+    protected int numberOfNodes() {
+        return 1;
+    }
+
     protected KeyValueApi api = newKeyValueApi();
 
     @Test
@@ -95,7 +99,7 @@ public abstract class AbstractKeyValueApiTest {
         SoftAssertions softAssert = new SoftAssertions();
 
         Set<NodeInfo> info = api.getInfo();
-        softAssert.assertThat(info).as("size").hasSize(1);
+        softAssert.assertThat(info).as("size").hasSize(numberOfNodes());
         softAssert.assertThat(info.iterator().next().getStatus()).as("status").isEqualTo(NodeStatus.UP);
 
         softAssert.assertAll();

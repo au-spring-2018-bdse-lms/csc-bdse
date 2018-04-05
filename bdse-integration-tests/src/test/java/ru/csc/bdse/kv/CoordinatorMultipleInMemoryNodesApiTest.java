@@ -24,14 +24,8 @@ public class CoordinatorMultipleInMemoryNodesApiTest extends AbstractKeyValueApi
         ), new LastTimestampConflictResolver());
     }
 
-    @Test
-    public void getClusterInfoValue() {
-        Set<NodeInfo> expectedInfo = new HashSet<NodeInfo>();
-        expectedInfo.add(new NodeInfo("node-0", NodeStatus.UP));
-        expectedInfo.add(new NodeInfo("node-1", NodeStatus.UP));
-        expectedInfo.add(new NodeInfo("node-2", NodeStatus.UP));
-
-        Set<NodeInfo> info = api.getInfo();
-        assertEquals(expectedInfo, info);
+    @Override
+    protected int numberOfNodes() {
+        return 3;
     }
 }
