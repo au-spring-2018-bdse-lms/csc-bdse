@@ -1,5 +1,6 @@
 package ru.csc.bdse;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -25,10 +26,9 @@ public class Application {
         return "kvnode-" + UUID.randomUUID().toString().substring(4);
     }
 
-    @Bean
-    KeyValueApi exposedNode() {
+    @Bean(name="external")
+    KeyValueApi external(@Qualifier("inner") KeyValueApi innerNode) {
         String[] replicasUrl = Env.get(Env.KVNODE_REPLICAS_URL).orElse("").split(",");
-        KeyValueApi innerNode = innerNode();
         if (replicasUrl.length == 0) {
             return innerNode;
         }
@@ -41,9 +41,10 @@ public class Application {
         for (String peerUrl : replicasUrl) {
             peers.add(new KeyValueApiHttpClient(peerUrl));
         }
-        return new Coordinator(new ClusterConfiguration(peers, 1000, wcl, rcl), new LastTimestampConflictResolver());
+        return new Coordinator(new ClusterConfiguration(peers, replicaTimeoutMs, wcl, rcl), new LastTimestampConflictResolver());
     }
 
+    @Bean(name="inner")
     KeyValueApi innerNode() {
         String nodeName = Env.get(Env.KVNODE_NAME).orElseGet(Application::randomNodeName);
         if (!Env.get(Env.KVNODE_INMEMORY).orElse("").equals("")) {
