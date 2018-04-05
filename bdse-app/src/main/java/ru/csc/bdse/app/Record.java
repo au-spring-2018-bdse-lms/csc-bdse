@@ -8,6 +8,7 @@ import java.util.Set;
  * @author alesavin
  */
 public interface Record {
+    Long getUid();
 
     /**
      * Returns literals, associated with Record

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package pb10;
+
+option java_package = "ru.csc.bdse.app.pb10.proto";
+
+message RecordMessage {
+    fixed64 uid = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string phone = 4;
+}
