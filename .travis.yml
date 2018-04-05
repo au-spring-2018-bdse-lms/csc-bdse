@@ -1,0 +1,10 @@
+sudo: required
+language: java
+services:
+- docker
+install:
+- ./mvnw --projects bdse-kvnode clean package
+- docker pull redis:3.2.11
+- docker pull openjdk:8-jdk-alpine
+script:
+- ./mvnw --projects bdse-integration-tests --also-make test
