@@ -1,8 +1,9 @@
 package ru.csc.bdse.kv;
 
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -13,25 +14,42 @@ import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
 
+@RunWith(Parameterized.class)
 public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
     private static final int REDIS_PORT = 6379;
     private static final Network network = Network.newNetwork();
     private static GenericContainer[] redisNodes, nodes;
     private static KeyValueApi[] innerNodes;
 
-    private static final int REPLICAS = 3;
-    private static final int WCL = 2;
-    private static final int RCL = 2;
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {3, 2, 2}, {5, 3, 3}
+        });
+    }
 
-    @BeforeClass
-    public static void setUp() {
-        redisNodes = new GenericContainer[REPLICAS];
+    private static int replicas;
+    private static int wcl;
+    private static int rcl;
+
+    public ContaineredReplicasTest(int replicas, int wcl, int rcl) {
+        if (ContaineredReplicasTest.replicas == replicas && ContaineredReplicasTest.wcl == wcl &&
+                ContaineredReplicasTest.rcl == rcl) {
+            return;
+        }
+        stopNodes();
+        ContaineredReplicasTest.replicas = replicas;
+        ContaineredReplicasTest.wcl = wcl;
+        ContaineredReplicasTest.rcl = rcl;
+
+        redisNodes = new GenericContainer[replicas];
         for (int i = 0; i < redisNodes.length; i++) {
             redisNodes[i] = new GenericContainer("redis:3.2.11")
                     .withExposedPorts(REDIS_PORT)
@@ -41,11 +59,11 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
             redisNodes[i].start();
         }
 
-        nodes = new GenericContainer[REPLICAS];
-        innerNodes = new KeyValueApi[REPLICAS];
-        for (int i = 0; i < REPLICAS; i++) {
+        nodes = new GenericContainer[replicas];
+        innerNodes = new KeyValueApi[replicas];
+        for (int i = 0; i < replicas; i++) {
             List<String> peers = new ArrayList<>();
-            for (int j = 0; j < REPLICAS; j++)
+            for (int j = 0; j < replicas; j++)
                 if (i != j) {
                     peers.add("http://node" + j + ":8080/inner");
                 }
@@ -57,6 +75,10 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
 
     @AfterClass
     public static void tearDown() {
+        stopNodes();
+    }
+
+    private static void stopNodes() {
         if (nodes != null) {
             for (GenericContainer node : nodes) {
                 if (node != null) {
@@ -64,7 +86,7 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
                 }
             }
         }
-        if (nodes != null) {
+        if (redisNodes != null) {
             for (GenericContainer node : redisNodes) {
                 if (node != null) {
                     node.stop();
@@ -73,7 +95,7 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
         }
     }
 
-    protected static GenericContainer createNode(String nodeName, String replicasUrl) {
+    protected GenericContainer createNode(String nodeName, String replicasUrl) {
         return new GenericContainer(
                 new ImageFromDockerfile()
                         .withFileFromFile("target/bdse-kvnode-0.0.1-SNAPSHOT.jar", new File
@@ -83,8 +105,8 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
                 .withEnv(Env.KVNODE_REDIS_URI, "redis://redis-" + nodeName + ":" + REDIS_PORT)
                 .withEnv(Env.KVNODE_REPLICAS_URL, replicasUrl)
                 .withEnv(Env.KVNODE_REPLICA_TIMEOUT_MS, "1000")
-                .withEnv(Env.KVNODE_WCL, Integer.toString(WCL))
-                .withEnv(Env.KVNODE_RCL, Integer.toString(RCL))
+                .withEnv(Env.KVNODE_WCL, Integer.toString(wcl))
+                .withEnv(Env.KVNODE_RCL, Integer.toString(rcl))
                 .withExposedPorts(8080)
                 .withNetwork(network)
                 .withNetworkAliases(nodeName)
@@ -102,7 +124,7 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
 
     @Override
     protected int numberOfNodes() {
-        return REPLICAS;
+        return replicas;
     }
 
     @Test
@@ -112,7 +134,7 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
 
         api.put(key, value);
 
-        for (int i = 0; i < REPLICAS; i++) {
+        for (int i = 0; i < replicas; i++) {
             System.out.println("Pausing node " + i);
             innerNodes[i].action("node" + i, NodeAction.DOWN);
             try {
@@ -128,7 +150,7 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
         String key = Random.nextKey();
 
         api.put(key, Random.nextValue());
-        for (int i = 0; i < REPLICAS; i++) {
+        for (int i = 0; i < replicas; i++) {
             byte[] newValue = Random.nextValue();
             System.out.println("Pausing node " + i);
             innerNodes[i].action("node" + i, NodeAction.DOWN);
