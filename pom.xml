@@ -94,6 +94,7 @@
 					<artifactId>protobuf-maven-plugin</artifactId>
 					<version>0.5.1</version>
 					<configuration>
+						<checkStaleness>true</checkStaleness>
 						<protocArtifact>com.google.protobuf:protoc:3.4.0:exe:${os.detected.classifier}</protocArtifact>
 					</configuration>
 					<executions>
