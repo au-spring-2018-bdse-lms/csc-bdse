@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 
 public class LastTimestampConflictResolver implements ConflictResolver {
     @Override
-    public Distributed.VersionedRecord resolve(List<Distributed.VersionedRecord> records) {
-        Distributed.VersionedRecord result = null;
-        for (Distributed.VersionedRecord record : records) {
+    public VersionedRecord resolve(List<VersionedRecord> records) {
+        VersionedRecord result = null;
+        for (VersionedRecord record : records) {
             if (record == null) continue;
             // TODO: what if timestamps coincide?
             if (result == null || result.getTimestamp() < record.getTimestamp()) {

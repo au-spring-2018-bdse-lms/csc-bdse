@@ -36,7 +36,7 @@ public class Coordinator implements KeyValueApi {
     @Override
     public void put(String key, byte[] value) {
         byte[] record =
-                Distributed.VersionedRecord.newBuilder()
+                VersionedRecord.newBuilder()
                         .setPayload(ByteString.copyFrom(value))
                         .setIsDeleted(false)
                         .setTimestamp(System.currentTimeMillis())
@@ -50,13 +50,13 @@ public class Coordinator implements KeyValueApi {
 
     @Override
     public Optional<byte[]> get(String key) {
-        Distributed.VersionedRecord result =
+        VersionedRecord result =
                 resolver.resolve(
                         submitToReplicasAndCheck(configuration.getReadConsistencyLevel(), replica -> {
                             Optional<byte[]> record = replica.get(key);
                             if (record.isPresent()) {
                                 try {
-                                    return Distributed.VersionedRecord.parseFrom(record.get());
+                                    return VersionedRecord.parseFrom(record.get());
                                 } catch (InvalidProtocolBufferException ignored) {
                                 }
                             }
@@ -78,7 +78,7 @@ public class Coordinator implements KeyValueApi {
     @Override
     public void delete(String key) {
         byte[] record =
-                Distributed.VersionedRecord.newBuilder()
+                VersionedRecord.newBuilder()
                         .setIsDeleted(true)
                         .setTimestamp(System.currentTimeMillis())
                         .build()
