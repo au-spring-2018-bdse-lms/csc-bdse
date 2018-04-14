@@ -29,7 +29,7 @@ public class Coordinator implements KeyValueApi {
         replicasCount = configuration.getReplicas().size();
         executorServices = new ExecutorService[replicasCount];
         for (int i = 0; i < replicasCount; i++) {
-            executorServices[i] = Executors.newSingleThreadExecutor();
+            executorServices[i] = Executors.newScheduledThreadPool(/*corePoolSize=*/ 1);
         }
     }
 
