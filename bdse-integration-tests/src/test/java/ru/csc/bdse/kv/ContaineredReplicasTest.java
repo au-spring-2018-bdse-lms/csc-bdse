@@ -29,7 +29,7 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
     private static GenericContainer[] redisNodes, nodes;
     private static KeyValueApi[] innerNodes;
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "RF={0}, WCL={1}, RCL={2}git st")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {1, 1, 1},
