@@ -1,5 +1,6 @@
 package ru.csc.bdse.kv;
 
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
@@ -31,6 +32,8 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
+                {1, 1, 1},
+                {3, 3, 1}, {3, 1, 3},
                 {3, 2, 2}, {5, 3, 3}
         });
     }
@@ -137,11 +140,17 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
         for (int i = 0; i < replicas; i++) {
             System.out.println("Pausing node " + i);
             innerNodes[i].action("node" + i, NodeAction.DOWN);
+
+            boolean succeeded = false;
             try {
                 assertArrayEquals(value, api.get(key).get());
+                succeeded = true;
+            } catch (NodeUnavailableException ignored) {
             } finally {
                 innerNodes[i].action("node" + i, NodeAction.UP);
             }
+
+            assertEquals(rcl < replicas, succeeded);
         }
     }
 
@@ -149,17 +158,33 @@ public class ContaineredReplicasTest extends AbstractKeyValueApiTest {
     public void writeKillOverwriteRestoreRead() {
         String key = Random.nextKey();
 
-        api.put(key, Random.nextValue());
+        byte[] oldValue = Random.nextValue();
+        api.put(key, oldValue);
         for (int i = 0; i < replicas; i++) {
             byte[] newValue = Random.nextValue();
             System.out.println("Pausing node " + i);
             innerNodes[i].action("node" + i, NodeAction.DOWN);
+
+            boolean succeeded = false;
             try {
                 api.put(key, newValue);
+                succeeded = true;
+            } catch (NodeUnavailableException ignored) {
             } finally {
                 innerNodes[i].action("node" + i, NodeAction.UP);
             }
-            assertArrayEquals(newValue, api.get(key).get());
+
+            if (wcl < replicas) {
+                assertTrue(succeeded);
+                assertArrayEquals(newValue, api.get(key).get());
+            } else {
+                assertFalse(succeeded);
+                assertThat(api.get(key).get(),
+                        Matchers.anyOf(
+                                Matchers.equalTo(oldValue),
+                                Matchers.equalTo(newValue)
+                        ));
+            }
         }
     }
 }
