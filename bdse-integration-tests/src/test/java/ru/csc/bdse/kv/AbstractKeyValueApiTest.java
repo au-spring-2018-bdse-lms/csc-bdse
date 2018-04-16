@@ -1,6 +1,7 @@
 package ru.csc.bdse.kv;
 
 import org.assertj.core.api.SoftAssertions;
+import org.junit.Before;
 import org.junit.Test;
 import ru.csc.bdse.util.Constants;
 import ru.csc.bdse.util.Random;
@@ -19,7 +20,18 @@ public abstract class AbstractKeyValueApiTest {
 
     protected abstract KeyValueApi newKeyValueApi();
 
-    private KeyValueApi api = newKeyValueApi();
+    private static boolean setUpIsDone = false;
+
+    protected int numberOfNodes() {
+        return 1;
+    }
+
+    protected KeyValueApi api;
+
+    @Before
+    public void setUpApi() {
+        api = newKeyValueApi();
+    }
 
     @Test
     public void createValue() {
@@ -95,8 +107,10 @@ public abstract class AbstractKeyValueApiTest {
         SoftAssertions softAssert = new SoftAssertions();
 
         Set<NodeInfo> info = api.getInfo();
-        softAssert.assertThat(info).as("size").hasSize(1);
-        softAssert.assertThat(info.iterator().next().getStatus()).as("status").isEqualTo(NodeStatus.UP);
+        softAssert.assertThat(info).as("size").hasSize(numberOfNodes());
+        for (NodeInfo node : info) {
+            softAssert.assertThat(node.getStatus()).as("status").isEqualTo(NodeStatus.UP);
+        }
 
         softAssert.assertAll();
     }
