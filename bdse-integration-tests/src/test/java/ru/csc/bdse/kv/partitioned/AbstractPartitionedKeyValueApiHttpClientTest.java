@@ -1,8 +1,9 @@
-package ru.csc.bdse.kv;
+package ru.csc.bdse.kv.partitioned;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import ru.csc.bdse.kv.KeyValueApi;
 
 import java.util.Optional;
 import java.util.Set;
