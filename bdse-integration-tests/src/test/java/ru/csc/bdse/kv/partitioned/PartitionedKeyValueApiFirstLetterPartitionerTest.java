@@ -60,6 +60,11 @@ public class PartitionedKeyValueApiFirstLetterPartitionerTest extends AbstractPa
     }
 
     @Override
+    protected float estimatedKeyLossProbability() {
+        return 1.0f / 3.0f;
+    }
+
+    @Override
     protected float expectedKeysLossProportion() {
         return (float) innerNodes[1].getKeys("").size() / keys.size();
     }

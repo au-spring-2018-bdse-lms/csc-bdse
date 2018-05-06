@@ -10,6 +10,7 @@ import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -28,6 +29,8 @@ public abstract class AbstractPartitionedKeyValueApiHttpClientTest {
     protected abstract KeyValueApi newCluster2();
 
     protected abstract Set<String> keys();
+
+    protected abstract float estimatedKeyLossProbability();
 
     protected abstract float expectedKeysLossProportion();
 
@@ -59,7 +62,9 @@ public abstract class AbstractPartitionedKeyValueApiHttpClientTest {
                 lossCnt++;
             }
         }
-        assertEquals(expectedKeysLossProportion(),  (float) lossCnt / keys.size(), PROPORTION_EPS);
+        assertEquals(expectedKeysLossProportion(), (float) lossCnt / keys.size(), PROPORTION_EPS);
+        // Assuming all key losses are independent, 3 sigma rule will fail with <0.03% probability.
+        assertEquals(estimatedKeyLossProbability(), expectedKeysLossProportion(), 3 * expectedKeyLossSigma());
     }
 
     @Test
@@ -76,6 +81,13 @@ public abstract class AbstractPartitionedKeyValueApiHttpClientTest {
     public void test4ReadKeysFromCluster1AfterDeletionAtCluster2() {
         Set<String> currentKeys = cluster1.getKeys("");
         assertEquals(expectedUndeletedKeysProportion(), (float) currentKeys.size() / keys.size(), PROPORTION_EPS);
+        // Assuming all key losses are independent, 3 sigma rule will fail with <0.03% probability.
+        assertEquals(estimatedKeyLossProbability(), expectedUndeletedKeysProportion(), 3 * expectedKeyLossSigma());
+    }
+
+    protected float expectedKeyLossSigma() {
+        float variance = estimatedKeyLossProbability() * (1 - estimatedKeyLossProbability()) / keys.size();
+        return (float)Math.sqrt(variance);
     }
 }
 

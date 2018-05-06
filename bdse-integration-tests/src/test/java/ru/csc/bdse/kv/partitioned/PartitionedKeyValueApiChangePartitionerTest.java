@@ -61,6 +61,13 @@ public class PartitionedKeyValueApiChangePartitionerTest extends AbstractPartiti
     }
 
     @Override
+    protected float estimatedKeyLossProbability() {
+        // The key is lost if different APIs send it to different partitions.
+        // We have 3 partitions in both cases, so it's lost in 2/3 cases.
+        return 2.0f / 3.0f;
+    }
+
+    @Override
     protected float expectedKeysLossProportion() {
         int cntChangedPartitionKeys = 0;
         for (String key : keys) {

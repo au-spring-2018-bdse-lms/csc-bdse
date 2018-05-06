@@ -63,6 +63,13 @@ public class PartitionedKeyValueApiConsistentPartitionerTest extends AbstractPar
     }
 
     @Override
+    protected float estimatedKeyLossProbability() {
+        // There are 3 partitions in the first cluster, 2 shards in the second.
+        // Keys are distributed randomly. Chance of getting the same partition id is 2/(2*3).
+        return 2.0f / 6.0f;
+    }
+
+    @Override
     protected float expectedKeysLossProportion() {
         return (float) innerNodes[1].getKeys("").size() / keys.size();
     }

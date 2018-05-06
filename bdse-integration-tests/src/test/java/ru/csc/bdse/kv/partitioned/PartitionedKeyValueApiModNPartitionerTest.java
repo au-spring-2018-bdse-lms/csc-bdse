@@ -64,6 +64,11 @@ public class PartitionedKeyValueApiModNPartitionerTest extends AbstractPartition
     }
 
     @Override
+    protected float estimatedKeyLossProbability() {
+        return 0.8f;
+    }
+
+    @Override
     protected float expectedKeysLossProportion() {
         int cntChangedPartitionKeys = 0;
         for (String key : keys) {
@@ -71,13 +76,7 @@ public class PartitionedKeyValueApiModNPartitionerTest extends AbstractPartition
                 cntChangedPartitionKeys++;
             }
         }
-        // A random key changes partition with 20% probability (if it's residue mod 15 is 0, 1 or 2).
-        // That gives use binomial distribution of loss proportion with expected value of 0.2
-        // and variance of 0.16 / keys.size(). So by three sigma rule 0.75 is a  threshold with
-        // >99.7% probability of success.
-        float lossProportion = (float) cntChangedPartitionKeys / keys.size();
-        assertThat(lossProportion, greaterThan(0.75f));
-        return lossProportion;
+        return (float) cntChangedPartitionKeys / keys.size();
     }
 
     @Override
