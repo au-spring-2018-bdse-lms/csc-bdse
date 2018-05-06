@@ -71,8 +71,12 @@ public class PartitionedKeyValueApiModNPartitionerTest extends AbstractPartition
                 cntChangedPartitionKeys++;
             }
         }
+        // A random key changes partition with 20% probability (if it's residue mod 15 is 0, 1 or 2).
+        // That gives use binomial distribution of loss proportion with expected value of 0.2
+        // and variance of 0.16 / keys.size(). So by three sigma rule 0.75 is a  threshold with
+        // >99.7% probability of success.
         float lossProportion = (float) cntChangedPartitionKeys / keys.size();
-        assertTrue(lossProportion > 0.5);
+        assertTrue(lossProportion > 0.75);
         return lossProportion;
     }
 
