@@ -17,7 +17,7 @@ public class PartitionedKeyValueApiFirstLetterPartitionerTest extends AbstractPa
     private static Map<String, KeyValueApi> shardsForCluster2;
     private static Partitioner partitionerForCluster1;
     private static Partitioner partitionerForCluster2;
-    private static Set<String> keys = Stream.generate(() -> RandomStringUtils.randomAlphanumeric(10)).limit(1000)
+    private static Set<String> keys = Stream.generate(() -> RandomStringUtils.random(10)).limit(1000)
             .collect(Collectors.toSet());
 
     @BeforeClass
