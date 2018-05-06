@@ -65,7 +65,7 @@ public class ShardsCoordinator implements KeyValueApi {
 
     @Override
     public void action(String node, NodeAction action) {
-        execute(node, shard -> {
+        executeOnAll(shard -> {
             shard.action(node, action);
             return null;
         });
