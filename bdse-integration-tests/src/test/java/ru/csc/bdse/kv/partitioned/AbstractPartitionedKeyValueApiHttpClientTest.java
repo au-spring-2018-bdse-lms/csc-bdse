@@ -18,7 +18,6 @@ import static org.junit.Assert.assertFalse;
  *
  * @author alesavin
  */
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractPartitionedKeyValueApiHttpClientTest {
 
