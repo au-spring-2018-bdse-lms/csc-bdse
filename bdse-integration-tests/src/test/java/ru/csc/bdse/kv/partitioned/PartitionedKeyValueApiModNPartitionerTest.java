@@ -11,8 +11,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static junit.framework.TestCase.assertTrue;
-
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 public class PartitionedKeyValueApiModNPartitionerTest extends AbstractPartitionedKeyValueApiHttpClientTest {
     private static Map<String, KeyValueApi> shardsForCluster1;
@@ -76,7 +76,7 @@ public class PartitionedKeyValueApiModNPartitionerTest extends AbstractPartition
         // and variance of 0.16 / keys.size(). So by three sigma rule 0.75 is a  threshold with
         // >99.7% probability of success.
         float lossProportion = (float) cntChangedPartitionKeys / keys.size();
-        assertTrue(lossProportion > 0.75);
+        assertThat(lossProportion, greaterThan(0.75f));
         return lossProportion;
     }
 
