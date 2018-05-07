@@ -12,7 +12,7 @@ public class ConsistentHashMd5Partitioner implements Partitioner {
     private final ConsistentHash ch;
 
     public ConsistentHashMd5Partitioner(Set<String> partitions) {
-        this.ch = new ConsistentHash(HashingFunctions.md5Function, partitions);
+        this.ch = new ConsistentHash(HashingFunctions.md5Function, partitions, 100);
     }
 
     @Override
